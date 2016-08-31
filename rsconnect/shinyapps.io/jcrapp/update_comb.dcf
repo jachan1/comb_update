@@ -1,0 +1,9 @@
+name: update_comb
+account: jcrapp
+server: shinyapps.io
+appId: 123241
+bundleId: 545707
+url: https://jcrapp.shinyapps.io/update_comb/
+when: 1472661232.14541
+asMultiple: FALSE
+asStatic: FALSE
