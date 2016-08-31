@@ -88,7 +88,7 @@ server <- shinyServer(function(input, output) {
     # gs_webapp_auth_url()
     withProgress(message="Working", value=0, {
       inc <- function(str=""){
-        n=5
+        n=4
         incProgress(1/n, detail = str)
       }
       
@@ -130,7 +130,7 @@ server <- shinyServer(function(input, output) {
       ## combine all data and write as comb_new
       ## go to the google sheet and delete comb and rename comb_new to comb
       new_comb <- bind_rows(alld %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, 0, current)), add_iep, add_stu) %>% arrange(lasid, iep_end_dt)
-      inc("saving comb_new (be sure you have removed comb_new from the googlesheet)")
+      inc("saving comb_new")
       if("comb_new" %in% ss$ws$ws_title) {
         curs <- grep("comb_new", ss$ws$ws_title, value=T)
         suffix <- max(as.numeric(substr(curs, nchar(curs), nchar(curs))), na.rm=T)
