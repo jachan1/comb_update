@@ -50,7 +50,7 @@ ui <- shinyUI(fluidPage(
                 accept=c('text/csv', 
                          'text/comma-separated-values,text/plain', 
                          '.csv')),
-      textInput("gs", label="Google Sheet extension", value="1AbLEdU0qFyBWjvPKY8c24E3YUmnp3-Dcnew1wUiF2qc"),
+      textInput("gs", label="Google Sheet extension", value="1Es_RC8SRopbvojrXxk_PRxyuQknG-4y9NRoY5ZmLr-s"),
       textInput("sht", label="Worksheet Name", value="comb")
     ),
     mainPanel(
