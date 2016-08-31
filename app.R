@@ -51,7 +51,10 @@ ui <- shinyUI(fluidPage(
                          'text/comma-separated-values,text/plain', 
                          '.csv')),
       textInput("gs", label="Google Sheet extension", value="1Es_RC8SRopbvojrXxk_PRxyuQknG-4y9NRoY5ZmLr-s"),
-      textInput("sht", label="Worksheet Name", value="comb")
+      textInput("sht", label="Worksheet Name", value="comb"),
+      hr(),
+      helpText("comb_archive_[date]: archive of old comb file"),
+      helpText("comb_new: new comb file. delete old file and rename comb")
     ),
     mainPanel(
       h2('New Students Added to Comb'),
