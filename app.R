@@ -108,7 +108,7 @@ server <- shinyServer(function(input, output) {
       gs_ws_new(ss, ws_title=arch_sheet, input=alld, trim=T)
       inc("comb archived")
       # newp <- read.csv("C:/Users/jy70/Downloads/QR_698494113154544280.csv", stringsAsFactors=F)
-      newp <- read.csv(inFile$datapath, stringsAsFactors=F) %>% rename(lasid=LASID)
+      newp <- read.csv(inFile$datapath, stringsAsFactors=F)
       newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
       if(!"current" %in% names(alld)) alld$current=1
       if(!"Date" %in% class(alld$iep_end_dt)) alld$iep_end_dt=as.Date(alld$iep_end_dt, "%m/%d/%Y")
