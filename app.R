@@ -92,9 +92,11 @@ server <- shinyServer(function(input, output) {
         incProgress(1/n, detail = str)
       }
       
+      # ss <- gs_url("https://docs.google.com/spreadsheets/d/1Es_RC8SRopbvojrXxk_PRxyuQknG-4y9NRoY5ZmLr-s")
       ss <- gs_url(paste0("https://docs.google.com/spreadsheets/d/", input$gs))
       inc("connecter to sheet")
       ## Read in current comb sheet and archive a copy
+      # alld <- gs_read(ss, "comb")
       alld <- gs_read(ss, input$sht)
       inc("comb loaded")
       arch_sheet <- sprintf("comb_archived_%s", format(Sys.Date(), "%Y_%m_%d"))
@@ -105,7 +107,9 @@ server <- shinyServer(function(input, output) {
       }
       gs_ws_new(ss, ws_title=arch_sheet, input=alld, trim=T)
       inc("comb archived")
+      # newp <- read.csv("C:/Users/jy70/Downloads/QR_698494113154544280.csv", stringsAsFactors=F)
       newp <- read.csv(inFile$datapath, stringsAsFactors=F) %>% rename(lasid=LASID)
+      newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
       if(!"current" %in% names(alld)) alld$current=1
       if(!"Date" %in% class(alld$iep_end_dt)) alld$iep_end_dt=as.Date(alld$iep_end_dt, "%m/%d/%Y")
       ## only keep the most recent iep noted in the new data
