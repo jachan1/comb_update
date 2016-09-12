@@ -107,14 +107,18 @@ server <- shinyServer(function(input, output) {
       }
       gs_ws_new(ss, ws_title=arch_sheet, input=alld, trim=T)
       inc("comb archived")
-      # newp <- read.csv("C:/Users/jy70/Downloads/QR_698494113154544280.csv", stringsAsFactors=F)
+      # newp <- read.csv("C:/Users/jy70/Downloads/QR_2331849983396688582.csv", stringsAsFactors=F)
       newp <- read.csv(inFile$datapath, stringsAsFactors=F)
       newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
       if(!"current" %in% names(alld)) alld$current=1
       if(!"Date" %in% class(alld$iep_end_dt)) alld$iep_end_dt=as.Date(alld$iep_end_dt, "%m/%d/%Y")
       ## only keep the most recent iep noted in the new data
       # nms <- c('lasid', 'Name', 'School', 'Grade', 'consult', 'push_in', 'push_out_11', 'push_out_grp', 'Homeroom', 'classroom', 'Homeroom_Teacher', 'teacher', 'Home_Lang', 'iep_start_dt', 'iep_end_dt', 'next_iep_review', 'next_iep_eval', paste0(rep(c("consult", "push_in", "push_out_11", "push_out_grp"), rep(3, 4)), rep(c("_freq", "_dur", "_days"), 4)))
-      rec_only <- newp %>% group_by(lasid) %>% summarise(EndDate = max(as.Date(EndDate, "%m/%d/%Y"))) %>% left_join(newp %>% mutate(EndDate=as.Date(EndDate, "%m/%d/%Y")), by=c("lasid", "EndDate"))
+      
+      current_alld <- alld %>% select(lasid, current_dt=iep_end_dt) %>% arrange(lasid, desc(current_dt)) %>% filter(!duplicated(lasid))
+      rec_only <- newp %>% group_by(lasid) %>% summarise(EndDate = max(as.Date(EndDate, "%m/%d/%Y"))) %>% 
+        left_join(newp %>% mutate(EndDate=as.Date(EndDate, "%m/%d/%Y")), by=c("lasid", "EndDate")) %>% 
+        left_join(current_alld, by="lasid") %>% filter(EndDate >= current_dt) %>% select(-current_dt)
       
       ## create text services info
       update_d <- rec_only %>% group_by(lasid) %>% do(mkrw(.)) %>% 
@@ -123,6 +127,12 @@ server <- shinyServer(function(input, output) {
       ## keep only data that does not already exist in the comb file
       ## should we also get this to update the services for subjects alread in comb?
       new_d <- update_d %>% anti_join(alld %>% select(lasid, iep_end_dt), by=c("lasid", "iep_end_dt")) %>% mutate(type="IEP")
+      
+      alld_updates_1 <- alld %>% left_join(update_d %>% select(lasid, iep_end_dt, push_out_grp_new=push_out_grp, consult_new=consult, push_in_new=push_in, push_out_11_new=push_out_11), by=c("lasid", "iep_end_dt"))
+      alld_updates <- alld_updates_1 %>% filter(current==1) %>% filter(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11) %>% 
+        mutate(push_out_grp=push_out_grp_new, consult=consult_new, push_in=push_in_new, push_out_11=push_out_11_new) %>% 
+        bind_rows(alld_updates_1 %>% mutate(current=ifelse(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11, 0, current))) %>% 
+        select(-push_out_grp_new, -consult_new, -push_in_new, -push_out_11_new)
       
       ## for subjects already in comb we add in new IEP info and take most info from previous comb entry
       add_iep <- new_d %>% select(lasid, consult_freq, consult_dur, consult_days, push_in_freq, push_in_dur, push_in_days, push_out_11_freq, push_out_11_dur, push_out_11_days, push_out_grp_freq, push_out_grp_dur, push_out_grp_days, push_out_grp, consult, push_out_11, push_in, Name, School, Homeroom, Home_Lang, iep_start_dt, iep_end_dt, next_iep_eval, next_iep_review, type) %>% 
@@ -133,7 +143,7 @@ server <- shinyServer(function(input, output) {
       
       ## combine all data and write as comb_new
       ## go to the google sheet and delete comb and rename comb_new to comb
-      new_comb <- bind_rows(alld %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, 0, current)), add_iep, add_stu) %>% arrange(lasid, iep_end_dt)
+      new_comb <- bind_rows(alld_updates %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, 0, current)), add_iep, add_stu) %>% arrange(lasid, iep_end_dt)
       inc("saving comb_new")
       if("comb_new" %in% ss$ws$ws_title) {
         curs <- grep("comb_new", ss$ws$ws_title, value=T)
