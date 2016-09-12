@@ -131,7 +131,8 @@ server <- shinyServer(function(input, output) {
       alld_updates_1 <- alld %>% left_join(update_d %>% select(lasid, iep_end_dt, push_out_grp_new=push_out_grp, consult_new=consult, push_in_new=push_in, push_out_11_new=push_out_11), by=c("lasid", "iep_end_dt"))
       alld_updates <- alld_updates_1 %>% filter(current==1) %>% filter(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11) %>% 
         mutate(push_out_grp=push_out_grp_new, consult=consult_new, push_in=push_in_new, push_out_11=push_out_11_new) %>% 
-        bind_rows(alld_updates_1 %>% mutate(current=ifelse(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11, 0, current))) %>% 
+        bind_rows(alld_updates_1 %>% mutate(current=ifelse(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11, 0, current),
+                                            iep_end_dt_manual=ifelse(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11, NA, Sys.Date()))) %>% 
         select(-push_out_grp_new, -consult_new, -push_in_new, -push_out_11_new)
       
       ## for subjects already in comb we add in new IEP info and take most info from previous comb entry
