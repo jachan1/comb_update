@@ -92,11 +92,11 @@ server <- shinyServer(function(input, output) {
         incProgress(1/n, detail = str)
       }
       
-      # ss <- gs_url("https://docs.google.com/spreadsheets/d/1Es_RC8SRopbvojrXxk_PRxyuQknG-4y9NRoY5ZmLr-s")
+      if(F) ss <- gs_url("https://docs.google.com/spreadsheets/d/1Es_RC8SRopbvojrXxk_PRxyuQknG-4y9NRoY5ZmLr-s")
       ss <- gs_url(paste0("https://docs.google.com/spreadsheets/d/", input$gs))
       inc("connecter to sheet")
       ## Read in current comb sheet and archive a copy
-      # alld <- gs_read(ss, "comb")
+      if(F) alld <- gs_read(ss, "comb")
       alld <- gs_read(ss, input$sht)
       inc("comb loaded")
       arch_sheet <- sprintf("comb_archived_%s", format(Sys.Date(), "%Y_%m_%d"))
@@ -107,7 +107,7 @@ server <- shinyServer(function(input, output) {
       }
       gs_ws_new(ss, ws_title=arch_sheet, input=alld, trim=T)
       inc("comb archived")
-      # newp <- read.csv("C:/Users/jy70/Downloads/QR_2331849983396688582.csv", stringsAsFactors=F)
+      if(F) newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP\ Data/data_pull_20161021.csv", stringsAsFactors=F)
       newp <- read.csv(inFile$datapath, stringsAsFactors=F)
       newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
       if(!"current" %in% names(alld)) alld$current=1
@@ -129,11 +129,15 @@ server <- shinyServer(function(input, output) {
       new_d <- update_d %>% anti_join(alld %>% select(lasid, iep_end_dt), by=c("lasid", "iep_end_dt")) %>% mutate(type="IEP")
       
       alld_updates_1 <- alld %>% left_join(update_d %>% select(lasid, iep_end_dt, push_out_grp_new=push_out_grp, consult_new=consult, push_in_new=push_in, push_out_11_new=push_out_11), by=c("lasid", "iep_end_dt"))
-      alld_updates <- alld_updates_1 %>% filter(current==1) %>% filter(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11) %>% 
-        mutate(push_out_grp=push_out_grp_new, consult=consult_new, push_in=push_in_new, push_out_11=push_out_11_new) %>% 
-        bind_rows(alld_updates_1 %>% mutate(current=ifelse(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11, 0, current),
-                                            iep_end_dt_manual=ifelse(push_out_grp_new!=push_out_grp | consult_new!=consult | push_in_new!=push_in | push_out_11_new!=push_out_11, NA, Sys.Date()))) %>% 
-        select(-push_out_grp_new, -consult_new, -push_in_new, -push_out_11_new)
+      
+      chkfxn <- function(x,y) (is.na(y) & !is.na(x)) | (!is.na(y) & is.na(x)) | (!is.na(x) & !is.na(y) & x != y)
+      
+      alld_updates <- alld_updates_1 %>% filter(current==1) %>% filter(chkfxn(push_out_grp_new, push_out_grp) | chkfxn(consult_new, consult) | chkfxn(push_in_new,push_in) | chkfxn(push_out_11_new, push_out_11)) %>%
+        mutate(push_out_grp=push_out_grp_new, consult=consult_new, push_in=push_in_new, push_out_11=push_out_11_new) %>%
+        bind_rows(alld_updates_1 %>% mutate(chgd = chkfxn(push_out_grp_new, push_out_grp) | chkfxn(consult_new, consult) | chkfxn(push_in_new,push_in) | chkfxn(push_out_11_new, push_out_11),
+                                            current=ifelse(chgd, 0, current),
+                                            iep_end_dt_manual=ifelse(chgd, NA, Sys.Date()))) %>%
+        select(-push_out_grp_new, -consult_new, -push_in_new, -push_out_11_new, -chgd)
       
       ## for subjects already in comb we add in new IEP info and take most info from previous comb entry
       add_iep <- new_d %>% select(lasid, consult_freq, consult_dur, consult_days, push_in_freq, push_in_dur, push_in_days, push_out_11_freq, push_out_11_dur, push_out_11_days, push_out_grp_freq, push_out_grp_dur, push_out_grp_days, push_out_grp, consult, push_out_11, push_in, Name, School, Homeroom, Home_Lang, iep_start_dt, iep_end_dt, next_iep_eval, next_iep_review, type) %>% 
