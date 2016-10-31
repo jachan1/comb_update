@@ -146,7 +146,7 @@ server <- shinyServer(function(input, output) {
       
       ## for subjects already in comb we add in new IEP info and take most info from previous comb entry
       add_iep <- new_d %>% select(lasid, consult_freq, consult_dur, consult_days, push_in_freq, push_in_dur, push_in_days, push_out_11_freq, push_out_11_dur, push_out_11_days, push_out_grp_freq, push_out_grp_dur, push_out_grp_days, push_out_grp, consult, push_out_11, push_in, Name, School, Homeroom, Home_Lang, iep_start_dt, iep_end_dt, next_iep_eval, next_iep_review, type) %>% 
-        inner_join(alld %>% select(lasid, Description, classroom, Grade, service_provider), by="lasid") %>% ungroup %>% mutate(current=1)
+        inner_join(alld %>% select(lasid, Description, classroom, Grade, service_provider, prog_name), by="lasid") %>% ungroup %>% mutate(current=1)
       
       ## for new students we can only use the new data
       add_stu <- new_d %>% anti_join(alld, by="lasid") %>% ungroup %>% mutate(current=1)
