@@ -4,4 +4,4 @@ require(googlesheets)
 gs_auth()
 
 ## Run App
-runGitHub("comb_update", "jachan1") 
+shiny::runGitHub("comb_update", "jachan1") 
