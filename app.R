@@ -105,7 +105,7 @@ server <- shinyServer(function(input, output) {
         suffix <- max(as.numeric(substr(curs, nchar(curs), nchar(curs))), na.rm=T)
         arch_sheet <- paste(arch_sheet, ifelse(suffix==-Inf, 1, suffix+1), sep="_v")
       }
-      gs_ws_new(ss, ws_title=arch_sheet, input=alld, trim=T)
+      gs_ws_new(ss, ws_title=arch_sheet, input=alld, row_extent=nrow(alld))
       inc("comb archived")
       if(F) newp <- read.csv("/Volumes/xmem/Downloads/data_pull_20161116.csv", stringsAsFactors=F)
       newp <- read.csv(inFile$datapath, stringsAsFactors=F)
@@ -162,7 +162,7 @@ server <- shinyServer(function(input, output) {
       if("comb_new" %in% ss$ws$ws_title) {
         curs <- grep("comb_new", ss$ws$ws_title, value=T)
         suffix <- max(as.numeric(substr(curs, nchar(curs), nchar(curs))), na.rm=T)
-        gs_ws_new(ss, ws_title=paste(arch_sheet, ifelse(suffix==-Inf, 1, suffix+1), sep="_v"), input=new_comb, trim=T)
+        gs_ws_new(ss, ws_title=paste("comb_new", ifelse(suffix==-Inf, 1, suffix+1), sep="_v"), input=new_comb, row_extent=nrow(new_comb)
       } else {
         gs_ws_new(ss, ws_title="comb_new", input=new_comb, row_extent=nrow(new_comb))
       }
