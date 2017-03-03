@@ -164,7 +164,7 @@ server <- shinyServer(function(input, output) {
         suffix <- max(as.numeric(substr(curs, nchar(curs), nchar(curs))), na.rm=T)
         gs_ws_new(ss, ws_title=paste(arch_sheet, ifelse(suffix==-Inf, 1, suffix+1), sep="_v"), input=new_comb, trim=T)
       } else {
-        gs_ws_new(ss, ws_title="comb_new", input=new_comb, trim=T)
+        gs_ws_new(ss, ws_title="comb_new", input=new_comb, row_extent=nrow(new_comb))
       }
       
       ## new ieps added
