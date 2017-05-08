@@ -101,9 +101,10 @@ server <- shinyServer(function(input, output) {
       inc("comb loaded")
       arch_sheet <- sprintf("comb_archived_%s", format(Sys.Date(), "%Y_%m_%d"))
       if(arch_sheet %in% ss$ws$ws_title) {
-        curs <- grep(arch_sheet, ss$ws$ws_title, value=T)
-        suffix <- max(as.numeric(gsub(paste0(arch_sheet, "_v"), "", curs)), na.rm=T)
-        arch_sheet <- paste(arch_sheet, ifelse(suffix==-Inf, 1, suffix+1), sep="_v")
+        arch_sheet_v <- paste0(arch_sheet, "_v")
+        curs <- grep(arch_sheet_v, ss$ws$ws_title, value=T)
+        suffix <- max(as.numeric(gsub(arch_sheet_v, "", curs)), na.rm=T)
+        arch_sheet <- paste0(arch_sheet_v, ifelse(suffix==-Inf, 1, suffix+1))
       }
       gs_ws_new(ss, ws_title=arch_sheet, input=alld, row_extent=nrow(alld))
       inc("comb archived")
@@ -159,13 +160,15 @@ server <- shinyServer(function(input, output) {
       ## go to the google sheet and delete comb and rename comb_new to comb
       new_comb <- bind_rows(alld_updates %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, 0, current)), add_iep, add_stu) %>% arrange(lasid, iep_end_dt)
       inc("saving comb_new")
+      comb_nm <- "comb_new"
       if("comb_new" %in% ss$ws$ws_title) {
-        curs <- grep("comb_new", ss$ws$ws_title, value=T)
-        suffix <- max(as.numeric(gsub(paste0("comb_new_v"), "", curs)), na.rm=T)
-        gs_ws_new(ss, ws_title=paste("comb_new", ifelse(suffix==-Inf, 1, suffix+1), sep="_v"), input=new_comb, row_extent=nrow(new_comb))
-      } else {
-        gs_ws_new(ss, ws_title="comb_new", input=new_comb, row_extent=nrow(new_comb))
+        comb_nm_v <- "comb_new_v"
+        curs <- grep(comb_nm_v, ss$ws$ws_title, value=T)
+        suffix <- max(as.numeric(gsub(comb_nm_v, "", curs)), na.rm=T)
+        comb_nm <- paste0(comb_nm_v, ifelse(suffix==-Inf, 1, suffix+1))
       }
+      gs_ws_new(ss, ws_title=comb_nm, input=new_comb, row_extent=nrow(new_comb))
+
       
       ## new ieps added
       newieps <- new_comb %>% filter(lasid %in% add_iep$lasid) %>% group_by(lasid) %>% arrange(lasid, iep_end_dt) %>% summarise(n_ieps = n(), iep_old_date=iep_end_dt[n_ieps-1], iep_new_dt=iep_end_dt[n_ieps], School=School[n_ieps], Homeroom=Homeroom[n_ieps]) %>% select(-n_ieps) %>% arrange(School)
