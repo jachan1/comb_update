@@ -10,6 +10,11 @@ require(dplyr)
 library(shiny)
 require(googlesheets)
 
+select <- dplyr::select
+mutate <- dplyr::mutate
+filter <- dplyr::filter
+summarise <- dplyr::summarise
+
 mkcls <- function(cond, old_ds, col_prefix){
   new_ds <- data.frame(n=1)
   if(sum(cond) > 0){
@@ -107,7 +112,7 @@ server <- shinyServer(function(input, output) {
       }
       gs_ws_new(ss, ws_title=arch_sheet, input=alld, row_extent=nrow(alld))
       inc("comb archived")
-      if(F) newp <- read.csv("/Volumes/xmem/Downloads/data_pull_20161116.csv", stringsAsFactors=F)
+      if(F) newp <- read.csv("C:/Users/jy70/Downloads/QR_13769566969346085.csv", stringsAsFactors=F)
       newp <- read.csv(inFile$datapath, stringsAsFactors=F)
       newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
       if(!"current" %in% names(alld)) alld$current=1
