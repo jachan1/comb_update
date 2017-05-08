@@ -107,7 +107,7 @@ server <- shinyServer(function(input, output) {
       arch_sheet <- sprintf("comb_archived_%s", format(Sys.Date(), "%Y_%m_%d"))
       if(arch_sheet %in% ss$ws$ws_title) {
         curs <- grep(arch_sheet, ss$ws$ws_title, value=T)
-        suffix <- max(as.numeric(substr(curs, nchar(curs), nchar(curs))), na.rm=T)
+        suffix <- max(as.numeric(gsub(paste0(arch_sheet, "_v"), "", curs)), na.rm=T)
         arch_sheet <- paste(arch_sheet, ifelse(suffix==-Inf, 1, suffix+1), sep="_v")
       }
       gs_ws_new(ss, ws_title=arch_sheet, input=alld, row_extent=nrow(alld))
