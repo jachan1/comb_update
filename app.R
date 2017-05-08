@@ -161,7 +161,7 @@ server <- shinyServer(function(input, output) {
       inc("saving comb_new")
       if("comb_new" %in% ss$ws$ws_title) {
         curs <- grep("comb_new", ss$ws$ws_title, value=T)
-        suffix <- max(as.numeric(substr(curs, nchar(curs), nchar(curs))), na.rm=T)
+        suffix <- max(as.numeric(gsub(paste0("comb_new_v"), "", curs)), na.rm=T)
         gs_ws_new(ss, ws_title=paste("comb_new", ifelse(suffix==-Inf, 1, suffix+1), sep="_v"), input=new_comb, row_extent=nrow(new_comb))
       } else {
         gs_ws_new(ss, ws_title="comb_new", input=new_comb, row_extent=nrow(new_comb))
