@@ -10,11 +10,6 @@ require(dplyr)
 library(shiny)
 require(googlesheets)
 
-select <- dplyr::select
-mutate <- dplyr::mutate
-filter <- dplyr::filter
-summarise <- dplyr::summarise
-
 mkcls <- function(cond, old_ds, col_prefix){
   new_ds <- data.frame(n=1)
   if(sum(cond) > 0){
