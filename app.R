@@ -108,24 +108,38 @@ server <- shinyServer(function(input, output) {
       }
       gs_ws_new(ss, ws_title=arch_sheet, input=alld, row_extent=nrow(alld))
       inc("comb archived")
-      if(F) newp <- read.csv("C:/Users/jy70/Downloads/QR_13769566969346085.csv", stringsAsFactors=F)
+      if(F) newp <- read.csv("C:/Users/jy70/Downloads/QR_5190829666270949734.csv", stringsAsFactors=F)
       newp <- read.csv(inFile$datapath, stringsAsFactors=F)
       newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
       if(!"current" %in% names(alld)) alld$current=1
-      if(!"Date" %in% class(alld$iep_end_dt)) alld$iep_end_dt=as.Date(alld$iep_end_dt, "%m/%d/%Y")
+      if(!"Date" %in% class(alld$iep_end_dt)) {
+        dt1=as.Date(alld$iep_end_dt, "%m/%d/%Y")
+        dt2=as.Date(alld$iep_end_dt)
+        alld$iep_end_dt= coalesce(dt1, dt2)
+      }
       ## only keep the most recent iep noted in the new data
       # nms <- c('lasid', 'Name', 'School', 'Grade', 'consult', 'push_in', 'push_out_11', 'push_out_grp', 'Homeroom', 'classroom', 'Homeroom_Teacher', 'teacher', 'Home_Lang', 'iep_start_dt', 'iep_end_dt', 'next_iep_review', 'next_iep_eval', paste0(rep(c("consult", "push_in", "push_out_11", "push_out_grp"), rep(3, 4)), rep(c("_freq", "_dur", "_days"), 4)))
       
       current_alld <- alld %>% select(lasid, current_dt=iep_end_dt) %>% arrange(lasid, desc(current_dt)) %>% filter(!duplicated(lasid))
-      rec_only <- newp %>% group_by(lasid) %>% summarise(EndDate = max(as.Date(EndDate, "%m/%d/%Y"))) %>% 
+      rec_only <- newp %>% group_by(lasid) %>% 
+        summarise(EndDate = max(as.Date(EndDate, "%m/%d/%Y"))) %>% 
         left_join(newp %>% mutate(EndDate=as.Date(EndDate, "%m/%d/%Y")), by=c("lasid", "EndDate")) %>% 
-        left_join(current_alld, by="lasid") %>% filter(is.na(current_dt) | EndDate >= current_dt) %>% select(-current_dt)
+        left_join(current_alld, by="lasid") %>% filter(is.na(current_dt) | EndDate >= current_dt) %>% 
+        select(-current_dt)
       
-      newp_cols <- c(lasid="lasid", Name="Name", School="Name.1", Homeroom="Homeroom", Home_Lang="NativeLanguage", iep_start_dt="StartDate", iep_end_dt="EndDate", next_iep_review="Next.IEP.review", next_iep_eval="Next.IEP.eval")
-      newp_cols <- newp_cols[newp_cols %in% names(rec_only)]
+      newp_cols <- c(Name="Name", School="Name.1", Homeroom="Homeroom", 
+                     Home_Lang="NativeLanguage")
+      newp_dts <- c(iep_start_dt="StartDate", iep_end_dt="EndDate",
+                    next_iep_review="Next.IEP.review", next_iep_eval="Next.IEP.eval")
+      
+      newp_cols <- c(newp_cols, newp_dts)[c(newp_cols, newp_dts) %in% names(rec_only)]
       ## create text services info
+      
+      ind_details <- rec_only %>% group_by(lasid) %>% mutate_at(newp_cols, function(x) x[!is.na(x)][1]) %>% 
+        ungroup %>% filter(!duplicated(lasid)) %>% .[c("lasid", names(newp_cols))]
+      
       update_d <- rec_only %>% group_by(lasid) %>% do(mkrw(.)) %>% 
-        left_join(rec_only %>% filter(!duplicated(lasid)) %>% .[newp_cols] %>% setNames(names(newp_cols)), by="lasid")
+        left_join(ind_details[c("lasid", names(newp_cols))])
      
       ## keep only data that does not already exist in the comb file
       ## should we also get this to update the services for subjects alread in comb?
@@ -134,12 +148,16 @@ server <- shinyServer(function(input, output) {
       # update_d %>% select(lasid, iep_end_dt, push_out_grp_new=push_out_grp, consult_new=consult, push_in_new=push_in, push_out_11_new=push_out_11) %>% 
         # right_join(alld, by=c("lasid", "iep_end_dt"))
       
-      alld_updates_1 <- alld %>% left_join(update_d %>% select(lasid, iep_end_dt, push_out_grp_new=push_out_grp, consult_new=consult, push_in_new=push_in, push_out_11_new=push_out_11) %>% 
-                                             mutate(upd=T), by=c("lasid", "iep_end_dt")) %>% mutate(updd=ifelse(is.na(upd), F, T)) %>% select(-upd)
+      alld_updates_1 <- alld %>% 
+        left_join(update_d %>% select(lasid, iep_end_dt, push_out_grp_new=push_out_grp, 
+                                      consult_new=consult, push_in_new=push_in, push_out_11_new=push_out_11) %>% 
+                    mutate(upd=T), by=c("lasid", "iep_end_dt")) %>%
+        mutate(updd=ifelse(is.na(upd), F, T)) %>% select(-upd)
       
       chkfxn <- function(x,y) (is.na(y) & !is.na(x)) | (!is.na(y) & is.na(x)) | (!is.na(x) & !is.na(y) & x != y)
       
-      alld_updates <- alld_updates_1 %>% filter(current==1 & updd) %>% filter(chkfxn(push_out_grp_new, push_out_grp) | chkfxn(consult_new, consult) | chkfxn(push_in_new,push_in) | chkfxn(push_out_11_new, push_out_11)) %>%
+      alld_updates <- alld_updates_1 %>% filter(current==1 & updd) %>% 
+        filter(chkfxn(push_out_grp_new, push_out_grp) | chkfxn(consult_new, consult) | chkfxn(push_in_new,push_in) | chkfxn(push_out_11_new, push_out_11)) %>%
         mutate(push_out_grp=push_out_grp_new, consult=consult_new, push_in=push_in_new, push_out_11=push_out_11_new) %>%
         bind_rows(alld_updates_1 %>% filter(updd) %>% mutate(chgd = chkfxn(push_out_grp_new, push_out_grp) | chkfxn(consult_new, consult) | chkfxn(push_in_new,push_in) | chkfxn(push_out_11_new, push_out_11),
                                             current=ifelse(chgd, 0, current),
@@ -148,10 +166,10 @@ server <- shinyServer(function(input, output) {
         select(-push_out_grp_new, -consult_new, -push_in_new, -push_out_11_new, -chgd, -updd)
       
       ## for subjects already in comb we add in new IEP info and take most info from previous comb entry
-      new_cols <- c('lasid', 'consult_freq', 'consult_dur', 'consult_days', 'push_in_freq', 'push_in_dur', 'push_in_days', 'push_out_11_freq', 'push_out_11_dur', 'push_out_11_days', 'push_out_grp_freq', 'push_out_grp_dur', 'push_out_grp_days', 'push_out_grp', 'consult', 'push_out_11', 'push_in', 'Name', 'School', 'Homeroom', 'Home_Lang', 'iep_start_dt', 'iep_end_dt', 'next_iep_eval', 'next_iep_review', 'type')
+      new_cols <- c('lasid', 'consult_freq', 'consult_dur', 'consult_days', 'push_in_freq', 'push_in_dur', 'push_in_days', 'push_out_11_freq', 'push_out_11_dur', 'push_out_11_days', 'push_out_grp_freq', 'push_out_grp_dur', 'push_out_grp_days', 'push_out_grp', 'consult', 'push_out_11', 'push_in', 'iep_start_dt', 'iep_end_dt', 'next_iep_eval', 'next_iep_review', 'type')
       new_cols <- new_cols[new_cols %in% names(new_d)]
       add_iep <- new_d %>% .[new_cols] %>% 
-        inner_join(alld %>% select(lasid, Description, classroom, Grade, service_provider, prog_name), by="lasid") %>% ungroup %>% mutate(current=1)
+        inner_join(alld %>% select(lasid, Description, classroom, Homeroom, Home_Lang, Grade, service_provider, prog_name), by="lasid") %>% ungroup %>% mutate(current=1)
       
       ## for new students we can only use the new data
       add_stu <- new_d %>% anti_join(alld, by="lasid") %>% ungroup %>% mutate(current=1)
