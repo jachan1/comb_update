@@ -201,7 +201,8 @@ server <- shinyServer(function(input, output) {
       ## combine all data and write as comb_new
       ## go to the google sheet and delete comb and rename comb_new to comb
       new_comb <- bind_rows(alld_updates %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, as.integer(0), current)),
-                            add_iep, add_stu) %>% arrange(lasid, iep_end_dt)
+                            add_iep, add_stu) %>% arrange(lasid, iep_end_dt) %>% 
+        mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade))
       
       inc("saving comb_new")
       comb_nm <- "comb_new"
@@ -211,9 +212,9 @@ server <- shinyServer(function(input, output) {
         suffix <- max(as.numeric(gsub(comb_nm_v, "", curs)), na.rm=T)
         comb_nm <- paste0(comb_nm_v, ifelse(suffix==-Inf, 1, suffix+1))
       }
+      
       gs_ws_new(ss, ws_title=comb_nm, input=new_comb, row_extent=nrow(new_comb))
 
-      
       ## new ieps added
       newieps <- new_comb %>% filter(lasid %in% add_iep$lasid) %>% group_by(lasid) %>% 
         arrange(lasid, iep_end_dt) %>% 
