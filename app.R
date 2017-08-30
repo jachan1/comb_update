@@ -179,7 +179,7 @@ server <- shinyServer(function(input, output) {
                              chkfxn(push_out_11_new, push_out_11),
                            chgd = as.numeric(chgdl),
                            current=if_else(chgd==1, as.integer(0), current),
-                           iep_end_dt_manual=if_else(chgd==1, Sys.Date(), iep_end_dt_manual))) %>%
+                           iep_end_dt_manual=if_else(chgd==1, Sys.Date(), as.Date(NA)))) %>%
         bind_rows(alld_updates_1 %>% filter(!updd)) %>% 
         select(-push_out_grp_new, -consult_new, -push_in_new, -push_out_11_new, -chgd, -updd)
       
