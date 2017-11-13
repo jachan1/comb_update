@@ -69,7 +69,9 @@ ui <- shinyUI(fluidPage(
       h2('New IEPs added to Existing Students in Comb'),
       dataTableOutput('newieps'),
       h2('IEPs in Comb with Different Data in New Sheet'),
-      dataTableOutput('chgieps')
+      dataTableOutput('chgieps'),
+      h2('File location'),
+      textOutput("flloc")
     )
     
     
@@ -225,6 +227,9 @@ server <- shinyServer(function(input, output) {
       } else if(input$outtyp == "sfl") {
         gs_ws_new(ss, ws_title=comb_nm, input=data.frame(id="placeholder"))
         write.csv(new_comb, "comb_new.csv", row.names = FALSE)
+        output$flloc <- renderText({ 
+          getwd()
+        })
       }
 
       ## new ieps added
