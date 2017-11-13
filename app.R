@@ -55,6 +55,9 @@ ui <- shinyUI(fluidPage(
                          '.csv')),
       textInput("gs", label="Google Sheet extension", value="1Es_RC8SRopbvojrXxk_PRxyuQknG-4y9NRoY5ZmLr-s"),
       textInput("sht", label="Worksheet Name", value="comb"),
+      radioButtons("outtyp", "Output Choice:",
+               c("Send to GDocs" = "gdoc",
+                 "Save to file" = "sfl")),
       hr(),
       helpText("comb_archive_[date]: archive of old comb file"),
       helpText("comb_new: new comb file. delete old file and rename comb"),
@@ -110,7 +113,12 @@ server <- shinyServer(function(input, output) {
         suffix <- max(as.numeric(gsub(arch_sheet_v, "", curs)), na.rm=T)
         arch_sheet <- paste0(arch_sheet_v, ifelse(suffix==-Inf, 1, suffix+1))
       }
-      gs_ws_new(ss, ws_title=arch_sheet, input=alld, row_extent=nrow(alld))
+      if(input$outtyp=="gdoc") {
+        gs_ws_new(ss, ws_title=arch_sheet, input=alld, row_extent=nrow(alld))
+      } else if(input$outtyp == "sfl") {
+        gs_ws_new(ss, ws_title=arch_sheet, input=data.frame(id="placeholder"))
+        write.csv(alld, arch_sheet, row.names = FALSE)
+      }
       inc("comb archived")
       if(F) {
         newp <- read.csv("C:/Users/jy70/Downloads/QR_5190829666270949734.csv", stringsAsFactors=F)
@@ -212,8 +220,12 @@ server <- shinyServer(function(input, output) {
         suffix <- max(as.numeric(gsub(comb_nm_v, "", curs)), na.rm=T)
         comb_nm <- paste0(comb_nm_v, ifelse(suffix==-Inf, 1, suffix+1))
       }
-      
-      gs_ws_new(ss, ws_title=comb_nm, input=new_comb, row_extent=nrow(new_comb))
+      if(input$outtyp=="gdoc") {
+        gs_ws_new(ss, ws_title=comb_nm, input=new_comb, row_extent=nrow(new_comb))
+      } else if(input$outtyp == "sfl") {
+        gs_ws_new(ss, ws_title=comb_nm, input=data.frame(id="placeholder"))
+        write.csv(new_comb, "comb_new.csv", row.names = FALSE)
+      }
 
       ## new ieps added
       newieps <- new_comb %>% filter(lasid %in% add_iep$lasid) %>% group_by(lasid) %>% 
