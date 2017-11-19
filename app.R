@@ -217,6 +217,10 @@ server <- shinyServer(function(input, output) {
       
       day5_ids <- c("23514", "23434", "34070")
       
+      for(vr in c("consult", "push_in", "push_out_11", "push_out_grp")){
+        new_comb[[vr]][!(new_comb$lasid %in% day5_ids)] <- gsub(" 0 days", " 30 days", new_comb[[vr]][!(new_comb$lasid %in% day5_ids)])
+        new_comb[[vr]][new_comb$lasid %in% day5_ids] <- gsub(" 0 days", " 30 days", new_comb[[vr]][new_comb$lasid %in% day5_ids])
+      }
       new_comb$consult[!(new_comb$lasid %in% day5_ids)] <- gsub(" 0 days", " 30 days", new_comb$consult[!(new_comb$lasid %in% day5_ids)])
       new_comb$consult[new_comb$lasid %in% day5_ids] <- gsub(" 0 days", " 30 days", new_comb$consult[new_comb$lasid %in% day5_ids])
       
