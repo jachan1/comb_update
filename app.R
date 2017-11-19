@@ -126,6 +126,7 @@ server <- shinyServer(function(input, output) {
         newp <- read.csv("C:/Users/jy70/Downloads/QR_5190829666270949734.csv", stringsAsFactors=F)
         newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP Data/QR_9053072085564247494.csv", stringsAsFactors=F)
       } 
+      if(F) newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP\ Data/QR_8434401085657738118.csv", stringsAsFactors=F)
       newp <- read.csv(inFile$datapath, stringsAsFactors=F)
       newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
       if(!"current" %in% names(alld)) alld$current=1
@@ -213,6 +214,11 @@ server <- shinyServer(function(input, output) {
       new_comb <- bind_rows(alld_updates %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, as.integer(0), current)),
                             add_iep, add_stu) %>% arrange(lasid, iep_end_dt) %>% 
         mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade))
+      
+      day5_ids <- c("23514", "23434", "34070")
+      
+      new_comb$consult[!(new_comb$lasid %in% day5_ids)] <- gsub(" 0 days", " 30 days", new_comb$consult[!(new_comb$lasid %in% day5_ids)])
+      new_comb$consult[new_comb$lasid %in% day5_ids] <- gsub(" 0 days", " 30 days", new_comb$consult[new_comb$lasid %in% day5_ids])
       
       inc("saving comb_new")
       comb_nm <- "comb_new"
