@@ -119,14 +119,14 @@ server <- shinyServer(function(input, output) {
         gs_ws_new(ss, ws_title=arch_sheet, input=alld, row_extent=nrow(alld))
       } else if(input$outtyp == "sfl") {
         gs_ws_new(ss, ws_title=arch_sheet, input=data.frame(id="placeholder"))
-        write.csv(alld, arch_sheet, row.names = FALSE)
+        write.csv(alld, paste0(arch_sheet, ".csv"), row.names = FALSE)
       }
       inc("comb archived")
       if(F) {
-        newp <- read.csv("C:/Users/jy70/Downloads/QR_5190829666270949734.csv", stringsAsFactors=F)
+        newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP\ Data/QR_8434401085657738118.csv", stringsAsFactors=F)
         newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP Data/QR_9053072085564247494.csv", stringsAsFactors=F)
       } 
-      if(F) newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP\ Data/QR_8434401085657738118.csv", stringsAsFactors=F)
+      
       newp <- read.csv(inFile$datapath, stringsAsFactors=F)
       newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
       if(!"current" %in% names(alld)) alld$current=1
@@ -161,7 +161,15 @@ server <- shinyServer(function(input, output) {
       
       update_d <- rec_only %>% group_by(lasid) %>% do(mkrw(.)) %>% 
         left_join(ind_details[c("lasid", names(newp_cols))])
-     
+      
+      day5_ids <- c("23514", "23434", "34070")
+      
+      for(vr in c("consult", "push_in", "push_out_11", "push_out_grp")){
+        update_d[[vr]][!(update_d$lasid %in% day5_ids)] <- gsub(" 0 days", " 30 days", update_d[[vr]][!(update_d$lasid %in% day5_ids)])
+        update_d[[vr]][update_d$lasid %in% day5_ids] <- gsub(" 0 days", " 5 days", update_d[[vr]][update_d$lasid %in% day5_ids])
+      }
+      # update_d$consult
+      
       ## keep only data that does not already exist in the comb file
       ## should we also get this to update the services for subjects alread in comb?
       new_d <- update_d %>% anti_join(alld %>% select(lasid, iep_end_dt), by=c("lasid", "iep_end_dt")) %>% mutate(type="IEP")
@@ -215,14 +223,6 @@ server <- shinyServer(function(input, output) {
                             add_iep, add_stu) %>% arrange(lasid, iep_end_dt) %>% 
         mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade))
       
-      day5_ids <- c("23514", "23434", "34070")
-      
-      for(vr in c("consult", "push_in", "push_out_11", "push_out_grp")){
-        new_comb[[vr]][!(new_comb$lasid %in% day5_ids)] <- gsub(" 0 days", " 30 days", new_comb[[vr]][!(new_comb$lasid %in% day5_ids)])
-        new_comb[[vr]][new_comb$lasid %in% day5_ids] <- gsub(" 0 days", " 30 days", new_comb[[vr]][new_comb$lasid %in% day5_ids])
-      }
-      new_comb$consult[!(new_comb$lasid %in% day5_ids)] <- gsub(" 0 days", " 30 days", new_comb$consult[!(new_comb$lasid %in% day5_ids)])
-      new_comb$consult[new_comb$lasid %in% day5_ids] <- gsub(" 0 days", " 30 days", new_comb$consult[new_comb$lasid %in% day5_ids])
       
       inc("saving comb_new")
       comb_nm <- "comb_new"
