@@ -137,6 +137,8 @@ server <- shinyServer(function(input, output) {
       }
       if("integer" == class(alld$iep_end_dt_manual)) {
         alld$iep_end_dt_manual <- as.Date(alld$iep_end_dt_manual, origin="1970-01-01")
+      } else if("character" == class(alld$iep_end_dt_manual)) {
+        alld$iep_end_dt_manual <- as.Date(alld$iep_end_dt_manual, "%m/%d/%y")
       }
       ## only keep the most recent iep noted in the new data
       # nms <- c('lasid', 'Name', 'School', 'Grade', 'consult', 'push_in', 'push_out_11', 'push_out_grp', 'Homeroom', 'classroom', 'Homeroom_Teacher', 'teacher', 'Home_Lang', 'iep_start_dt', 'iep_end_dt', 'next_iep_review', 'next_iep_eval', paste0(rep(c("consult", "push_in", "push_out_11", "push_out_grp"), rep(3, 4)), rep(c("_freq", "_dur", "_days"), 4)))
