@@ -10,7 +10,7 @@ require(dplyr)
 library(shiny)
 require(googlesheets)
 
-update_dt <- "2017-08-26"
+update_dt <- "2017-11-28"
 
 
 mkcls <- function(cond, old_ds, col_prefix){
@@ -105,7 +105,17 @@ server <- shinyServer(function(input, output) {
       ss <- gs_url(paste0("https://docs.google.com/spreadsheets/d/", input$gs))
       inc("connecter to sheet")
       ## Read in current comb sheet and archive a copy
-      if(F) alld <- gs_read(ss, "comb")
+      if(F) {
+        alld1 <- gs_read(ss, "comb")
+        alld2 <- gs_read(ss, "comb_archived_2017_11_19")
+        alld3 <- gs_read(ss, "comb_archived_2017_11_12")
+        alld4 <- gs_read(ss, "comb_archived_2017_10_30")
+        alld <- gs_read(ss, "comb")
+        dt1=as.Date(alld$iep_end_dt, "%m/%d/%y")
+        dt2=as.Date(alld$iep_end_dt)
+        alld$iep_end_dt= coalesce(dt1, dt2)
+        alld <- unique(alld)
+      }
       alld <- gs_read(ss, input$sht)
       inc("comb loaded")
       arch_sheet <- sprintf("comb_archived_%s", format(Sys.Date(), "%Y_%m_%d"))
@@ -124,14 +134,14 @@ server <- shinyServer(function(input, output) {
       inc("comb archived")
       if(F) {
         newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP\ Data/QR_8434401085657738118.csv", stringsAsFactors=F)
-        newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP Data/QR_9053072085564247494.csv", stringsAsFactors=F)
+        newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP Data/QR_8271924928357067777.csv", stringsAsFactors=F)
       } 
       
       newp <- read.csv(inFile$datapath, stringsAsFactors=F)
       newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
-      if(!"current" %in% names(alld)) alld$current=1
-      if(!"Date" %in% class(alld$iep_end_dt)) {
-        dt1=as.Date(alld$iep_end_dt, "%m/%d/%Y")
+      # if(!"current" %in% names(alld)) alld$current=1
+      if("character" %in% class(alld$iep_end_dt)) {
+        dt1=as.Date(alld$iep_end_dt, "%m/%d/%y")
         dt2=as.Date(alld$iep_end_dt)
         alld$iep_end_dt= coalesce(dt1, dt2)
       }
@@ -213,7 +223,7 @@ server <- shinyServer(function(input, output) {
       add_iep <- new_d %>% .[new_cols] %>% 
         inner_join(alld %>% select(lasid, Name, School, Description, classroom, Homeroom, 
                                    Home_Lang, Grade, service_provider, prog_name, teacher,
-                                   Sped.Disability), by="lasid") %>%
+                                   Sped.Disability) %>% unique(), by="lasid") %>%
         ungroup %>% mutate(current=1)
       
       ## for new students we can only use the new data
