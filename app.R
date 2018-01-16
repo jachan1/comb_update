@@ -105,6 +105,7 @@ server <- shinyServer(function(input, output) {
       ss <- gs_url(paste0("https://docs.google.com/spreadsheets/d/", input$gs))
       inc("connecter to sheet")
       ## Read in current comb sheet and archive a copy
+      asd <- function(x) as.Date(x, "%m/%d/%Y")
       if(F) {
         alld1 <- gs_read(ss, "comb")
         alld2 <- gs_read(ss, "comb_archived_2017_11_19")
@@ -232,7 +233,9 @@ server <- shinyServer(function(input, output) {
       ## combine all data and write as comb_new
       ## go to the google sheet and delete comb and rename comb_new to comb
       new_comb <- bind_rows(alld_updates %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, as.integer(0), current)),
-                            add_iep, add_stu) %>% arrange(lasid, iep_end_dt) %>% 
+                            add_iep %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd), 
+                            add_stu %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd)) %>% 
+                                                                arrange(lasid, iep_end_dt) %>% 
         mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade))
       
       
