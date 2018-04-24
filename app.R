@@ -10,6 +10,8 @@ require(dplyr)
 library(shiny)
 require(googlesheets)
 
+select <- dplyr::select
+
 update_dt <- "2017-11-28"
 
 
