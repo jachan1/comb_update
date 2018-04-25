@@ -238,7 +238,8 @@ server <- shinyServer(function(input, output) {
                             add_iep %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd), 
                             add_stu %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd)) %>% 
                                                                 arrange(lasid, iep_end_dt) %>% 
-        mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade))
+        mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade)) %>% 
+        arrange(lasid, -current, iep_start_dt)
       
       
       inc("saving comb_new")
