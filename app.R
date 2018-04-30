@@ -136,7 +136,7 @@ server <- shinyServer(function(input, output) {
       }
       inc("comb archived")
       if(F) {
-        newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP\ Data/QR_8434401085657738118.csv", stringsAsFactors=F)
+        newp <- read.csv("C:/Users/jy70/Downloads/QR_6955283773237741651.csv", stringsAsFactors=F)
         newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP Data/QR_8271924928357067777.csv", stringsAsFactors=F)
       } 
       
@@ -247,8 +247,10 @@ server <- shinyServer(function(input, output) {
         arrange(lasid, iep_end_dt) %>% 
         mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade)) %>% 
         group_by(lasid) %>% 
-        mutate(current = ifelse(any(tolower(School) %in% out_schools), 0, current)) %>% 
+        mutate(chkout_school = any(tolower(School) %in% out_schools)) %>% 
         ungroup %>% 
+        mutate(current= ifelse(chkout_school, 0, current)) %>% 
+        select(-chkout_school) %>% 
         arrange(lasid, -current, iep_start_dt)
       
       
