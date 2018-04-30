@@ -244,9 +244,11 @@ server <- shinyServer(function(input, output) {
       new_comb <- bind_rows(alld_updates %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, as.integer(0), current)),
                             add_iep %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd), 
                             add_stu %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd)) %>% 
-                                                                arrange(lasid, iep_end_dt) %>% 
-        mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade),
-               current = ifelse(tolower(School) %in% out_schools, 0, current)) %>% 
+        arrange(lasid, iep_end_dt) %>% 
+        mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade)) %>% 
+        group_by(lasid) %>% 
+        mutate(current = ifelse(any(tolower(School) %in% out_schools), 0, current)) %>% 
+        ungroup %>% 
         arrange(lasid, -current, iep_start_dt)
       
       
