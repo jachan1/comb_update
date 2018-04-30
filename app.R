@@ -12,7 +12,7 @@ require(googlesheets)
 
 select <- dplyr::select
 
-update_dt <- "2017-11-28"
+update_dt <- "2018-04-30"
 
 
 mkcls <- function(cond, old_ds, col_prefix){
@@ -232,13 +232,21 @@ server <- shinyServer(function(input, output) {
       ## for new students we can only use the new data
       add_stu <- new_d %>% anti_join(alld, by="lasid") %>% ungroup %>% mutate(current=1)
       
+      ## out schools mean services have been permanently removed
+      out_schools <- c('discharged', 'discontinue', 'discontinued', 'disenrolled', 
+                       'does not exist', 'dropped', 'exited', 'exited from 504', 
+                       'exited from special ed', 'exited from sped', 'fiscal responsibility',
+                       'moved', 'moved to lynn 12/17', 'moved?', 'never showed up', 'northeast',
+                       'notheast', 'outplaced', 'rejected iep', 'temporarily discontinued')
+      
       ## combine all data and write as comb_new
       ## go to the google sheet and delete comb and rename comb_new to comb
       new_comb <- bind_rows(alld_updates %>% mutate(current=ifelse(current==1 & lasid %in% add_iep$lasid, as.integer(0), current)),
                             add_iep %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd), 
                             add_stu %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd)) %>% 
                                                                 arrange(lasid, iep_end_dt) %>% 
-        mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade)) %>% 
+        mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade),
+               current = ifelse(tolower(School) %in% out_schools, 0, current)) %>% 
         arrange(lasid, -current, iep_start_dt)
       
       
