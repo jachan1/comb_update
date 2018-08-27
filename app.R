@@ -273,14 +273,15 @@ server <- shinyServer(function(input, output) {
       }
 
       ## new ieps added
-      newieps <- new_comb %>% filter(lasid %in% add_iep$lasid) %>% group_by(lasid) %>% 
-        arrange(lasid, iep_end_dt) %>% 
-        summarise(n_ieps = n(), 
-                  iep_old_date=iep_end_dt[n_ieps-1], 
-                  iep_new_dt=iep_end_dt[n_ieps], 
-                  School=School[n_ieps],
-                  Homeroom=Homeroom[n_ieps]) %>% 
-        select(-n_ieps) %>% arrange(School)
+      newieps <- new_comb %>% 
+        filter(lasid %in% add_iep$lasid) %>% 
+        group_by(lasid) %>% 
+        arrange(lasid, desc(iep_end_dt)) %>% 
+        summarise(iep_old_date=iep_end_dt[2], 
+                  iep_new_dt=iep_end_dt[1], 
+                  School=School[1],
+                  Homeroom=Homeroom[1]) %>% 
+        arrange(School)
       
       ## new students added
       newstus <- add_stu %>% select(lasid, School, Homeroom) %>% arrange(School)
