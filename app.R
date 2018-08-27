@@ -31,7 +31,7 @@ mkcls <- function(cond, old_ds, col_prefix){
       new_ds[col_prefix] = sprintf("%gx%g per %g days", freq, dur, days)
     }
   } else {
-    new_ds[paste0(col_prefix, c("_freq", "_dur", "_days"))]  <- NA
+    new_ds[paste0(col_prefix, c("", "_freq", "_dur", "_days"))]  <- NA
   }
   new_ds
 }
