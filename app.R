@@ -226,7 +226,7 @@ server <- shinyServer(function(input, output) {
       add_iep <- new_d %>% .[new_cols] %>% 
         inner_join(alld %>% select(lasid, Name, School, Description, classroom, Homeroom, 
                                    Home_Lang, Grade, service_provider, prog_name, teacher,
-                                   Sped.Disability) %>% unique(), by="lasid") %>%
+                                   Sped.Disability, three21, type_new) %>% unique(), by="lasid") %>%
         ungroup %>% mutate(current=1)
       
       ## for new students we can only use the new data
