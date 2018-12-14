@@ -175,7 +175,8 @@ server <- shinyServer(function(input, output) {
         ungroup %>% filter(!duplicated(lasid)) %>% .[c("lasid", names(newp_cols))]
       
       update_d <- rec_only %>% group_by(lasid) %>% do(mkrw(.)) %>% 
-        left_join(ind_details[c("lasid", names(newp_cols))])
+        left_join(ind_details[c("lasid", names(newp_cols))],
+                  by = "lasid")
       
       day5_ids <- c("23514", "23434", "34070")
       
@@ -205,14 +206,15 @@ server <- shinyServer(function(input, output) {
                  chkfxn(consult_new, consult) | 
                  chkfxn(push_in_new,push_in) | 
                  chkfxn(push_out_11_new, push_out_11)) %>%
-        mutate(push_out_grp=push_out_grp_new, consult=consult_new, push_in=push_in_new, push_out_11=push_out_11_new) %>%
+        mutate(push_out_grp=push_out_grp_new, consult=consult_new, 
+               push_in=push_in_new, push_out_11=push_out_11_new) %>%
         bind_rows(alld_updates_1 %>% filter(updd) %>% 
                     mutate(chgdl = chkfxn(push_out_grp_new, push_out_grp) | 
                              chkfxn(consult_new, consult) | 
                              chkfxn(push_in_new,push_in) | 
                              chkfxn(push_out_11_new, push_out_11),
                            chgd = as.numeric(chgdl),
-                           current=if_else(chgd==1, as.integer(0), current),
+                           current=if_else(chgd==1, as.integer(0), as.integer(current)),
                            iep_end_dt_manual=if_else(chgd==1, Sys.Date(), as.Date(NA)))) %>%
         bind_rows(alld_updates_1 %>% filter(!updd)) %>% 
         select(-push_out_grp_new, -consult_new, -push_in_new, -push_out_11_new, -chgd, -updd)
