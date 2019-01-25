@@ -11,8 +11,9 @@ library(shiny)
 require(googlesheets)
 
 select <- dplyr::select
+summarise <- dplyr::summarise
 
-update_dt <- "2018-04-30"
+update_dt <- "2019-01-25"
 
 
 mkcls <- function(cond, old_ds, col_prefix){
