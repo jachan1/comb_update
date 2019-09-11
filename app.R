@@ -120,7 +120,21 @@ server <- shinyServer(function(input, output) {
         alld$iep_end_dt= coalesce(dt1, dt2)
         alld <- unique(alld)
       }
-      alld <- gs_read(ss, input$sht)
+      
+      
+      fix_date <- function(x) {
+        if(is.character(x)){
+          return(coalesce(as.Date(x, "%m/%d/%Y"), as.Date(x, "%Y-%m-%d")))
+        } else if(is.numeric(x)){
+          return(as.Date(x, origin="1970-01-01"))
+        } 
+        x
+      }
+      alld1 <- gs_read(ss, input$sht)
+      alld <- alld1 %>% 
+        mutate_at(vars(iep_start_dt, iep_end_dt,
+                       next_iep_review, next_iep_eval,
+                       iep_end_dt_manual), fix_date)
       inc("comb loaded")
       arch_sheet <- sprintf("comb_archived_%s", format(Sys.Date(), "%Y_%m_%d"))
       if(arch_sheet %in% ss$ws$ws_title) {
@@ -137,43 +151,43 @@ server <- shinyServer(function(input, output) {
       }
       inc("comb archived")
       if(F) {
-        newp <- read.csv("C:/Users/jy70/Downloads/QR_6955283773237741651.csv", stringsAsFactors=F)
-        newp <- read.csv("/Users/MBP1/Dropbox/BJ/SLP Data/QR_8271924928357067777.csv", stringsAsFactors=F)
+        newp1 <- read.csv("C:/Users/jy70/Dropbox (Personal)/BJ/SLP Data/QR_3340651996461292489.csv", stringsAsFactors=F)
+        newp1 <- read.csv("/Users/MBP1/Dropbox/BJ/SLP Data/QR_8271924928357067777.csv", stringsAsFactors=F)
       } 
       
-      newp <- read.csv(inFile$datapath, stringsAsFactors=F)
-      newp <- newp %>% rename_(lasid=grep("lasid", names(newp), ignore.case = T, value=T))
+      newp1 <- read.csv(inFile$datapath, stringsAsFactors=F)
+      
+      
+      newp_dts <- c(iep_start_dt="StartDate", iep_end_dt="EndDate",
+                    next_iep_review="Next.IEP.review", next_iep_eval="Next.IEP.eval")
+      
+      
+      newp <- newp1 %>%
+        rename(lasid=matches("lasid")) %>% 
+        mutate_at(unname(newp_dts), fix_date)
       # if(!"current" %in% names(alld)) alld$current=1
-      if("character" %in% class(alld$iep_end_dt)) {
-        dt1=as.Date(alld$iep_end_dt, "%m/%d/%y")
-        dt2=as.Date(alld$iep_end_dt)
-        alld$iep_end_dt= coalesce(dt1, dt2)
-      }
-      if("integer" == class(alld$iep_end_dt_manual)) {
-        alld$iep_end_dt_manual <- as.Date(alld$iep_end_dt_manual, origin="1970-01-01")
-      } else if("character" == class(alld$iep_end_dt_manual)) {
-        alld$iep_end_dt_manual <- as.Date(alld$iep_end_dt_manual, "%m/%d/%y")
-      }
+      
       ## only keep the most recent iep noted in the new data
       # nms <- c('lasid', 'Name', 'School', 'Grade', 'consult', 'push_in', 'push_out_11', 'push_out_grp', 'Homeroom', 'classroom', 'Homeroom_Teacher', 'teacher', 'Home_Lang', 'iep_start_dt', 'iep_end_dt', 'next_iep_review', 'next_iep_eval', paste0(rep(c("consult", "push_in", "push_out_11", "push_out_grp"), rep(3, 4)), rep(c("_freq", "_dur", "_days"), 4)))
       
       current_alld <- alld %>% select(lasid, current_dt=iep_end_dt) %>% arrange(lasid, desc(current_dt)) %>% filter(!duplicated(lasid))
       rec_only <- newp %>% group_by(lasid) %>% 
-        summarise(EndDate = max(as.Date(EndDate, "%m/%d/%Y"))) %>% 
-        left_join(newp %>% mutate(EndDate=as.Date(EndDate, "%m/%d/%Y")), by=c("lasid", "EndDate")) %>% 
+        summarise(EndDate = max(EndDate)) %>% 
+        left_join(newp, by=c("lasid", "EndDate")) %>% 
         left_join(current_alld, by="lasid") %>% filter(is.na(current_dt) | EndDate >= current_dt) %>% 
         select(-current_dt)
       
       newp_cols <- c(Name="Name", School="Name.1", Homeroom="Homeroom", 
                      Home_Lang="NativeLanguage", Sped.Disability="Sped.Disability")
-      newp_dts <- c(iep_start_dt="StartDate", iep_end_dt="EndDate",
-                    next_iep_review="Next.IEP.review", next_iep_eval="Next.IEP.eval")
       
       newp_cols <- c(newp_cols, newp_dts)[c(newp_cols, newp_dts) %in% names(rec_only)]
       ## create text services info
       
-      ind_details <- rec_only %>% group_by(lasid) %>% mutate_at(newp_cols, function(x) x[!is.na(x)][1]) %>% 
-        ungroup %>% filter(!duplicated(lasid)) %>% .[c("lasid", names(newp_cols))]
+      ind_details <- rec_only %>% group_by(lasid) %>% 
+        mutate_at(newp_cols, function(x) x[!is.na(x)][1]) %>% 
+        ungroup %>% 
+        filter(!duplicated(lasid)) %>% 
+        .[c("lasid", names(newp_cols))]
       
       update_d <- rec_only %>% group_by(lasid) %>% do(mkrw(.)) %>% 
         left_join(ind_details[c("lasid", names(newp_cols))],
@@ -189,7 +203,9 @@ server <- shinyServer(function(input, output) {
       
       ## keep only data that does not already exist in the comb file
       ## should we also get this to update the services for subjects alread in comb?
-      new_d <- update_d %>% anti_join(alld %>% select(lasid, iep_end_dt), by=c("lasid", "iep_end_dt")) %>% mutate(type="IEP")
+      new_d <- update_d %>% 
+        anti_join(alld %>% select(lasid, iep_end_dt), by=c("lasid", "iep_end_dt")) %>% 
+        mutate(type="IEP")
       
       # update_d %>% select(lasid, iep_end_dt, push_out_grp_new=push_out_grp, consult_new=consult, push_in_new=push_in, push_out_11_new=push_out_11) %>% 
         # right_join(alld, by=c("lasid", "iep_end_dt"))
@@ -226,10 +242,11 @@ server <- shinyServer(function(input, output) {
                     'push_out_grp_dur', 'push_out_grp_days', 'push_out_grp', 'consult', 'push_out_11', 'push_in', 
                     'iep_start_dt', 'iep_end_dt', 'next_iep_eval', 'next_iep_review', 'type')
       new_cols <- new_cols[new_cols %in% names(new_d)]
+      alld_ucols <- intersect(c("lasid", "Name", "School", "Description", "classroom", "Homeroom", 
+                     "Home_Lang", "Grade", "service_provider", "prog_name", "teacher",
+                     "Sped.Disability", "three21", "type_new"), names(alld))
       add_iep <- new_d %>% .[new_cols] %>% 
-        inner_join(alld %>% select(lasid, Name, School, Description, classroom, Homeroom, 
-                                   Home_Lang, Grade, service_provider, prog_name, teacher,
-                                   Sped.Disability, three21, type_new) %>% unique(), by="lasid") %>%
+        inner_join(alld[alld_ucols] %>% unique(), by="lasid") %>%
         ungroup %>% mutate(current=1)
       
       ## for new students we can only use the new data
@@ -248,7 +265,7 @@ server <- shinyServer(function(input, output) {
                             add_iep %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd), 
                             add_stu %>% mutate_at(vars(iep_start_dt, next_iep_eval, next_iep_review), asd)) %>% 
         arrange(lasid, iep_end_dt) %>% 
-        mutate(Grade = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade)) %>% 
+        mutate(Grade2 = ifelse(!is.na(as.numeric(Grade)), paste0("Gr ", Grade), Grade)) %>% 
         group_by(lasid) %>% 
         mutate(chkout_school = any(tolower(School) %in% out_schools)) %>% 
         ungroup %>% 
